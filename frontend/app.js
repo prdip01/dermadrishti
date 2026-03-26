@@ -8,7 +8,11 @@
 "use strict";
 
 /* ── Config ─────────────────────────────────────────────────── */
-const API_BASE = "http://localhost:5001";
+// For live deployment, update this URL to your Render backend URL.
+// Example: "https://dermadrishti-api.onrender.com"
+const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+  ? "http://localhost:5001" 
+  : "https://dermadrishti-api.onrender.com"; // <-- UPDATE THIS AFTER RENDER DEPLOY
 
 /* ── Class display names & colors for Chart ─────────────────── */
 const CLASS_DISPLAY = {
