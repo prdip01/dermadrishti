@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DermaDrishti — Skin Cancer Detection & Classification</title>
+  <meta name="description" content="AI-powered skin cancer detection using deep learning. Upload a dermoscopy image for instant analysis, classification, and Grad-CAM visualization." />
+  <meta name="keywords" content="skin cancer detection, melanoma, AI dermatology, HAM10000, EfficientNet" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ─── Header ─────────────────────────────────────────── -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="logo">
+        <div class="logo-icon" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="15" fill="url(#logoGrad)" />
+            <path d="M10 22 Q16 8 22 22" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+            <circle cx="16" cy="13" r="3" fill="white" opacity="0.85"/>
+            <defs>
+              <linearGradient id="logoGrad" x1="0" y1="0" x2="32" y2="32">
+                <stop offset="0%" stop-color="#2563eb"/>
+                <stop offset="100%" stop-color="#0ea5e9"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <span class="logo-name">DermaDrishti</span>
+          <span class="logo-tagline">Skin Analysis System</span>
+        </div>
+      </div>
+      <nav class="header-nav" aria-label="Main navigation">
+        <a href="#upload-section">Analyze</a>
+        <a href="#history-section">History</a>
+        <a href="#about-section">About</a>
+      </nav>
+      <div class="header-badge">
+        <span class="badge-dot"></span>
+        <span id="status-text">Connecting…</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ─── Hero ───────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="container hero-inner">
+      <div class="hero-content">
+        <div class="hero-chip">
+          <span class="chip-icon">🔬</span>
+          <span>Powered by EfficientNetB0 + HAM10000</span>
+        </div>
+        <h1 class="hero-title">
+          AI-Powered<br />
+          <span class="gradient-text">Skin Cancer Detection</span>
+        </h1>
+        <p class="hero-subtitle">
+          Upload a dermoscopy image to classify 7 types of skin lesions with
+          deep learning analysis, confidence scores, and Grad-CAM visualization.
+        </p>
+        <div class="hero-stats">
+          <div class="stat"><strong>7</strong><span>Disease Classes</span></div>
+          <div class="stat-divider"></div>
+          <div class="stat"><strong>224×224</strong><span>Image Processing</span></div>
+          <div class="stat-divider"></div>
+          <div class="stat"><strong>Grad-CAM</strong><span>Explainability</span></div>
+        </div>
+      </div>
+      <div class="hero-visual" aria-hidden="true">
+        <div class="hero-card-float">
+          <div class="float-icon">🧬</div>
+          <div>
+            <div class="float-label">HAM10000 Dataset</div>
+            <div class="float-value">10,015 Images</div>
+          </div>
+        </div>
+        <div class="hero-illustration">
+          <div class="pulse-ring ring-1"></div>
+          <div class="pulse-ring ring-2"></div>
+          <div class="pulse-ring ring-3"></div>
+          <div class="center-icon">🔬</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Upload Section ─────────────────────────────────── -->
+  <section id="upload-section" class="section upload-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Upload Skin Lesion Image</h2>
+        <p>Supported formats: JPG, PNG, JPEG · Max size: 10 MB</p>
+      </div>
+
+      <div class="upload-grid">
+        <!-- Drop Zone -->
+        <div class="upload-card">
+          <div class="drop-zone" id="drop-zone" role="button" tabindex="0"
+            aria-label="Click or drag and drop a skin lesion image to upload">
+
+            <div class="drop-zone-content" id="drop-zone-content">
+              <div class="upload-icon-wrap">
+                <svg class="upload-icon" viewBox="0 0 64 64" fill="none">
+                  <circle cx="32" cy="32" r="31" fill="url(#uploadGrad)" opacity="0.12"/>
+                  <path d="M32 44V24M22 34l10-10 10 10" stroke="url(#uploadGrad2)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                  <rect x="18" y="46" width="28" height="3" rx="1.5" fill="url(#uploadGrad2)" opacity="0.5"/>
+                  <defs>
+                    <linearGradient id="uploadGrad" x1="0" y1="0" x2="64" y2="64">
+                      <stop stop-color="#2563eb"/><stop offset="1" stop-color="#0ea5e9"/>
+                    </linearGradient>
+                    <linearGradient id="uploadGrad2" x1="0" y1="0" x2="64" y2="64">
+                      <stop stop-color="#2563eb"/><stop offset="1" stop-color="#0ea5e9"/>
+                    </linearGradient>
+                  </defs>
+                </svg>
+              </div>
+              <p class="drop-title">Drag & Drop your image here</p>
+              <p class="drop-sub">or</p>
+              <label for="file-input" class="btn btn-outline file-label">
+                Browse Files
+              </label>
+              <input type="file" id="file-input" accept="image/jpeg,image/png,image/jpg"
+                aria-label="Select image file" hidden />
+            </div>
+
+            <!-- Preview state (hidden initially) -->
+            <div class="preview-state hidden" id="preview-state">
+              <img id="preview-img" src="" alt="Uploaded skin lesion preview" class="preview-image" />
+              <div class="preview-actions">
+                <div class="preview-info">
+                  <span id="preview-filename" class="preview-filename"></span>
+                  <span id="preview-size" class="preview-size"></span>
+                </div>
+                <button class="btn-icon" id="remove-image" type="button" aria-label="Remove image">
+                  <svg viewBox="0 0 20 20" fill="currentColor" width="18"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary analyze-btn" id="analyze-btn" disabled
+            type="button" aria-label="Analyze uploaded image">
+            <span class="btn-text">Analyze Image</span>
+            <span class="btn-spinner hidden" aria-hidden="true">
+              <svg class="spinner" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-dasharray="30 70"/></svg>
+              Analyzing…
+            </span>
+            <svg class="btn-arrow" viewBox="0 0 20 20" fill="currentColor" width="20">
+              <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Quick Guide -->
+        <div class="guide-card">
+          <h3 class="guide-title">How It Works</h3>
+          <div class="guide-steps">
+            <div class="guide-step">
+              <div class="step-num">1</div>
+              <div>
+                <strong>Upload</strong>
+                <p>Drag & drop or browse for a dermoscopy skin lesion image (JPG/PNG)</p>
+              </div>
+            </div>
+            <div class="guide-step">
+              <div class="step-num">2</div>
+              <div>
+                <strong>Analyze</strong>
+                <p>Our EfficientNetB0 model processes the image in seconds</p>
+              </div>
+            </div>
+            <div class="guide-step">
+              <div class="step-num">3</div>
+              <div>
+                <strong>Results</strong>
+                <p>View predicted class, confidence, Grad-CAM, and precautions</p>
+              </div>
+            </div>
+          </div>
+          <div class="class-chips">
+            <p class="chips-label">Detectable Conditions</p>
+            <div class="chips-wrap">
+              <span class="chip chip-cancer">Melanoma</span>
+              <span class="chip chip-cancer">Basal Cell Carcinoma</span>
+              <span class="chip chip-cancer">Actinic Keratoses</span>
+              <span class="chip chip-safe">Melanocytic Nevi</span>
+              <span class="chip chip-safe">Benign Keratosis</span>
+              <span class="chip chip-safe">Dermatofibroma</span>
+              <span class="chip chip-safe">Vascular Lesions</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Results Section (hidden until prediction) ──────── -->
+  <section id="results-section" class="section results-section hidden" aria-live="polite">
+    <div class="container">
+
+      <!-- Demo mode banner -->
+      <div class="demo-banner hidden" id="demo-banner">
+        <div class="demo-banner-icon">⚠️</div>
+        <div>
+          <strong>Demo Mode — Simulated Results</strong>
+          <p>No trained model found. Train the model with HAM10000 for real predictions. See <code>backend/train.py</code>.</p>
+        </div>
+      </div>
+
+      <!-- Result Card -->
+      <div class="results-grid">
+        <div class="result-main-card" id="result-card">
+          <div class="result-header">
+            <div class="result-badge" id="result-badge">
+              <span class="badge-icon" id="badge-icon"></span>
+              <span id="badge-label">Analyzing…</span>
+            </div>
+            <div class="result-id" id="result-id"></div>
+          </div>
+
+          <div class="result-body">
+            <div class="result-class-name" id="result-class-name"></div>
+            <div class="result-full-name" id="result-full-name"></div>
+            <div class="confidence-row">
+              <span class="confidence-label">Confidence</span>
+              <span class="confidence-value" id="confidence-value"></span>
+            </div>
+            <div class="confidence-bar-wrap">
+              <div class="confidence-bar-track">
+                <div class="confidence-bar-fill" id="confidence-bar" style="width:0%"></div>
+              </div>
+            </div>
+            <p class="result-description" id="result-description"></p>
+          </div>
+        </div>
+
+        <!-- Grad-CAM Card -->
+        <div class="gradcam-card">
+          <h3 class="card-title">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="18"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+            Grad-CAM Analysis
+          </h3>
+          <p class="card-sub">Heatmap highlighting affected regions</p>
+          <div class="gradcam-wrap">
+            <img id="gradcam-img" src="" alt="Grad-CAM heatmap visualization of skin lesion" class="gradcam-image" />
+            <div class="gradcam-legend">
+              <span class="legend-item"><span class="legend-dot cool"></span>Low influence</span>
+              <span class="legend-item"><span class="legend-dot warm"></span>High influence</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Probability Chart -->
+      <div class="chart-card">
+        <h3 class="card-title">
+          <svg viewBox="0 0 20 20" fill="currentColor" width="18"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+          Probability Distribution — All Classes
+        </h3>
+        <div class="chart-container">
+          <canvas id="probability-chart" aria-label="Bar chart showing prediction probabilities for all 7 skin disease classes"></canvas>
+        </div>
+      </div>
+
+      <!-- Precautions Card -->
+      <div class="precautions-grid">
+        <div class="precautions-card" id="precautions-card">
+          <h3 class="card-title precautions-title" id="precautions-title">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="18"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+            Precautions & Suggestions
+          </h3>
+          <ul class="precautions-list" id="precautions-list"></ul>
+        </div>
+
+        <!-- Disclaimer Card -->
+        <div class="disclaimer-card">
+          <div class="disclaimer-icon">⚕️</div>
+          <h4>Medical Disclaimer</h4>
+          <p>
+            This tool is <strong>not a substitute for professional medical diagnosis</strong>.
+            Results are generated by an AI model and may not be accurate. Always consult a
+            licensed dermatologist or qualified healthcare provider for proper diagnosis and
+            treatment of skin conditions.
+          </p>
+          <div class="disclaimer-footer">
+            <span>🔬 For research & educational purposes only</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─── Prediction History ──────────────────────────────── -->
+  <section id="history-section" class="section history-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Prediction History</h2>
+        <p>Last 10 analyses from this session</p>
+      </div>
+      <div id="history-list" class="history-grid">
+        <div class="history-empty">
+          <div class="empty-icon">📋</div>
+          <p>No predictions yet. Upload an image to get started.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── About Section ──────────────────────────────────── -->
+  <section id="about-section" class="section about-section">
+    <div class="container about-container">
+      <div class="about-header">
+        <h2>About DermaDrishti</h2>
+        <p class="about-intro">
+          This project, <strong>DermaDrishti</strong>, is developed by <strong>Government Engineering College, Palamu</strong>.
+        </p>
+      </div>
+
+      <div class="about-grid-new">
+        <div class="about-card-new mentorship-card">
+          <div class="card-icon">👨‍🏫</div>
+          <h3>Mentorship</h3>
+          <p>
+            The project was carried out under the guidance of <strong>Professor Panjeet Kumar Lenka</strong>, 
+            whose mentorship, technical expertise, and continuous support were instrumental 
+            throughout the development process.
+          </p>
+        </div>
+
+        <div class="about-card-new team-card">
+          <div class="card-icon">👥</div>
+          <h3>Core Team Members</h3>
+          <ul class="team-list">
+            <li>
+              <span class="member-name">Pradeep Kumar (22CS0038)</span>
+              <span class="member-role">Led frontend development, including UI design, debugging, and error resolution.</span>
+            </li>
+            <li>
+              <span class="member-name">Prakhar Kumar Sinha (22CS0039)</span>
+              <span class="member-role">Contributed to system methodology, architecture design, and algorithm selection used in the application.</span>
+            </li>
+            <li>
+              <span class="member-name">Raju Tudo (22CS0044)</span>
+              <span class="member-role">Responsible for literature survey and complete project documentation.</span>
+            </li>
+            <li>
+              <span class="member-name">Rakesh Kumar Mandal (22CS0045)</span>
+              <span class="member-role">Worked on dataset training, model implementation, and backend development.</span>
+            </li>
+          </ul>
+        </div>
+
+        <div class="about-card-new acknowledgment-card">
+          <div class="card-icon">🙏</div>
+          <h3>Acknowledgment</h3>
+          <p>
+            We sincerely thank <strong>Bhavesh Sir</strong> and <strong>Deepak Kumar Ravi Sir</strong> 
+            for their valuable support and guidance.
+          </p>
+        </div>
+      </div>
+
+      <!-- Disease table preserved for reference -->
+      <div class="about-dataset-info">
+        <h3>System Methodology</h3>
+        <p>
+          DermaDrishti utilizes the <strong>HAM10000 Dataset</strong> (10,015 images) with an 
+          <strong>EfficientNetB0</strong> architecture, achieving high accuracy in classifying 
+          7 distinct types of skin lesions.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Footer ─────────────────────────────────────────── -->
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="footer-logo">
+        <strong>DermaDrishti</strong> — Skin Cancer Detection System
+      </div>
+      <p class="footer-disclaimer">
+        ⚕️ Not a medical diagnostic tool. Results are AI-generated and should not replace professional dermatological advice.
+      </p>
+      <p class="footer-copy">© 2026 · This website is developed by G12 CSE, GECP</p>
+    </div>
+  </footer>
+
+  <!-- App Script -->
+  <script src="app.js"></script>
+</body>
+</html>

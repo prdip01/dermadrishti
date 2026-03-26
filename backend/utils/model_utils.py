@@ -1,0 +1,93 @@
+"""
+model_utils.py
+==============
+Model loading, inference, and demo/mock mode fallback if model
+file is not yet available (before training on HAM10000).
+"""
+
+import os
+import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Path to the saved model
+MODEL_PATH = os.path.join(os.path.dirname(__file__), "../../models/skin_cancer_model.h5")
+
+# Cached model reference (loaded once)
+_model = None
+
+# Class labels in the same order as the model's output neurons
+CLASS_LABELS = ["akiec", "bcc", "bkl", "df", "mel", "nv", "vasc"]
+
+
+def load_model():
+    """
+    Load the EfficientNetB0 model from disk if available.
+    Returns the model object or None if not found (demo mode).
+    """
+    global _model
+    if _model is not None:
+        return _model
+
+    model_path = os.path.abspath(MODEL_PATH)
+    if not os.path.exists(model_path):
+        logger.warning(
+            f"Model file not found at {model_path}. "
+            "Running in DEMO MODE with simulated predictions."
+        )
+        return None
+
+    try:
+        import tensorflow as tf
+        logger.info(f"Loading model from {model_path} …")
+        _model = tf.keras.models.load_model(model_path)
+        logger.info("Model loaded successfully.")
+        return _model
+    except Exception as e:
+        logger.error(f"Failed to load model: {e}")
+        return None
+
+
+def predict(img_array: np.ndarray) -> dict:
+    """
+    Run inference on a preprocessed image array.
+
+    Args:
+        img_array: Numpy array of shape (1, 224, 224, 3), normalized to [0, 1].
+
+    Returns:
+        dict with keys:
+          - predicted_label (str): e.g. "mel"
+          - predicted_index (int): index into CLASS_LABELS
+          - confidence (float): 0–1 value of top prediction
+          - probabilities (dict): {label: probability} for all 7 classes
+    """
+    model = load_model()
+
+    if model is None:
+        # --- DEMO MODE ---
+        # Generate realistic-looking random probabilities for demonstration
+        raw = np.random.dirichlet(np.ones(7) * 0.5)
+        probs = dict(zip(CLASS_LABELS, raw.tolist()))
+        # Make the demo a bit more interesting — boost one class slightly
+        demo_class = CLASS_LABELS[np.argmax(raw)]
+        logger.info(f"[DEMO MODE] Predicted: {demo_class}")
+    else:
+        # --- REAL INFERENCE ---
+        raw = model.predict(img_array, verbose=0)[0]  # shape: (7,)
+        probs = dict(zip(CLASS_LABELS, raw.tolist()))
+        demo_class = None
+
+    # Identify top prediction
+    predicted_label = max(probs, key=probs.get)
+    predicted_index = CLASS_LABELS.index(predicted_label)
+    confidence = probs[predicted_label]
+
+    return {
+        "predicted_label": predicted_label,
+        "predicted_index": predicted_index,
+        "confidence": confidence,
+        "probabilities": probs,
+        "demo_mode": model is None,
+    }
