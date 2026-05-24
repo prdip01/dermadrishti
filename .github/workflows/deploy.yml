@@ -1,0 +1,67 @@
+# GitHub Actions Continuous Integration and Continuous Deployment (CI/CD) Pipeline
+# ==============================================================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch: # Allows manual trigger from the GitHub Actions tab
+
+jobs:
+  lint-and-test:
+    name: 🔍 Lint & Dependency Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true # Fetch large model file tracked by Git LFS
+
+      - name: 🐍 Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip' # Enable automatic caching of pip packages
+
+      - name: 📦 Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      - name: ⚙️ Verify environment configuration
+        run: |
+          cd backend
+          python check_env.py
+
+  sync-to-huggingface:
+    name: 🚀 Deploy to Hugging Face Spaces
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' # Only deploy on commits directly to main
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: 📡 Sync repository to Hugging Face Spaces hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        # We wrap this in a conditional shell statement to prevent workflow failures
+        # if the user hasn't set up their secret HF_TOKEN yet.
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "⚠️ HF_TOKEN secret is not set in GitHub repository settings."
+            echo "💡 To automate deployment to Hugging Face Spaces, add your HF_TOKEN to Secrets & Variables."
+            exit 0
+          fi
+          
+          echo "🚀 Syncing to Hugging Face Space..."
+          git remote add space https://prdip01:$HF_TOKEN@huggingface.co/spaces/prdip01/dermadrishti
+          git push --force space main

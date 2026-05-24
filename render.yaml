@@ -1,0 +1,16 @@
+# Render Blueprint Spec File (render.yaml)
+# Learn more at https://render.com/docs/blueprints
+
+services:
+  - type: web
+    name: dermadrishti-unified
+    env: python
+    plan: free # Can be upgraded to starter/standard as needed
+    region: oregon # Render's standard low-latency region
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: gunicorn --chdir backend app:app
+    envVars:
+      - key: FLASK_DEBUG
+        value: "false"
+      - key: PYTHON_VERSION
+        value: "3.12.13"
