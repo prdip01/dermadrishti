@@ -4,6 +4,8 @@
 
 A full-stack deep learning web application that classifies skin lesions into 7 disease categories using the HAM10000 dataset, EfficientNetB0 transfer learning, Flask backend, and a modern HTML/CSS/JS frontend with Grad-CAM explainability.
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/prdip01/dermadrishti)
+
 ---
 
 ## 🗂 Project Structure
