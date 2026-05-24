@@ -9,10 +9,9 @@
 
 /* ── Config ─────────────────────────────────────────────────── */
 // For live deployment, update this URL to your Render backend URL.
-// Example: "https://dermadrishti-api.onrender.com"
-const API_BASE = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" 
+const API_BASE = (window.location.protocol === "file:")
   ? "http://localhost:5001" 
-  : "https://dermadrishti-api.onrender.com"; // <-- UPDATE THIS AFTER RENDER DEPLOY
+  : ""; // Use relative path for unified deployment
 
 /* ── Class display names & colors for Chart ─────────────────── */
 const CLASS_DISPLAY = {

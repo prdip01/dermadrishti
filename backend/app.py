@@ -13,7 +13,7 @@ import os
 import base64
 import logging
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -24,8 +24,11 @@ from utils.gradcam import generate_gradcam
 from utils.class_info import get_class_info, CLASS_LABELS
 
 # ─── App Setup ───────────────────────────────────────────────────────────────
-app = Flask(__name__)
-CORS(app, origins="*")  # Allow all origins for local development
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, 
+            static_folder=os.path.join(BASE_DIR, "..", "frontend"), 
+            static_url_path="/")
+CORS(app, resources={r"/*": {"origins": "*"}})  # Allow cross-origin requests for local development
 
 logging.basicConfig(
     level=logging.INFO,
@@ -38,11 +41,24 @@ prediction_history = []
 MAX_HISTORY = 10
 
 # ─── Warm-up: load model at startup ──────────────────────────────────────────
-logger.info("Warming up model …")
-load_model()
+logger.info("🚀 Warming up Deep Learning model …")
+try:
+    m = load_model()
+    if m:
+        logger.info("✨ Model is ready for real-time predictions.")
+    else:
+        logger.warning("⚠️ Model not found or failed to load. Falling back to DEMO MODE.")
+except Exception as e:
+    logger.error(f"❌ Critical error during model warm-up: {e}")
 
 
 # ─── Routes ──────────────────────────────────────────────────────────────────
+
+@app.route("/")
+def index():
+    """Serve the frontend index.html."""
+    return app.send_static_file("index.html")
+
 
 @app.route("/health", methods=["GET"])
 def health():
@@ -52,7 +68,7 @@ def health():
         "status": "ok",
         "model_loaded": model is not None,
         "demo_mode": model is None,
-        "timestamp": datetime.utcnow().isoformat() + "Z"
+        "timestamp": datetime.now(timezone.utc).isoformat() + "Z"
     })
 
 
@@ -113,7 +129,7 @@ def predict_endpoint():
 
     # ── 6. Build response ─────────────────────────────────────────────────
     prediction_id = str(uuid.uuid4())[:8]
-    timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     response = {
         "id": prediction_id,
@@ -177,7 +193,15 @@ def get_classes():
 
 # ─── Entry point ─────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    # Use port 5001 as default because 5000 is often blocked by AirPlay on macOS
+    port = int(os.environ.get("PORT", 5001))
     debug = os.environ.get("FLASK_DEBUG", "true").lower() == "true"
     logger.info(f"Starting Skin Cancer Detection API on port {port} …")
-    app.run(host="0.0.0.0", port=port, debug=debug)
+    
+    try:
+        app.run(host="0.0.0.0", port=port, debug=debug)
+    except OSError as e:
+        if "Address already in use" in str(e):
+            logger.error(f"Port {port} is already in use! Try running: PORT=5002 python app.py")
+        else:
+            logger.error(f"Server failed to start: {e}")

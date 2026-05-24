@@ -11,8 +11,13 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Path to the saved model
-MODEL_PATH = os.path.join(os.path.dirname(__file__), "../../models/skin_cancer_model.h5")
+# Path to the saved model (absolute to avoid issues)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "..", "..", "models", "skin_cancer_model.h5")
+
+# Environment variables for macOS stability
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'  # Reduce logging clutter
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'TRUE' # Prevent OpenMP runtime conflict
 
 # Cached model reference (loaded once)
 _model = None
@@ -24,28 +29,50 @@ CLASS_LABELS = ["akiec", "bcc", "bkl", "df", "mel", "nv", "vasc"]
 def load_model():
     """
     Load the EfficientNetB0 model from disk if available.
-    Returns the model object or None if not found (demo mode).
+    Returns the model object or None if not found (demo mode/incompatible env).
     """
+    if os.environ.get("DEMO_ONLY") == "true":
+        return None
+
     global _model
     if _model is not None:
         return _model
 
+    # --- INCOMPATIBILITY GUARD for macOS ARM + Python 3.13 ---
+    # TensorFlow currently crashes (Abort trap: 6) on this combination.
+    import sys
+    import platform
+    is_macos_arm = sys.platform == "darwin" and platform.machine() == "arm64"
+    is_py313 = sys.version_info.major == 3 and sys.version_info.minor == 13
+
+    if is_macos_arm and is_py313:
+        logger.error(
+            "⚠️  INCOMPATIBLE ENVIRONMENT DETECTED (macOS ARM + Python 3.13)\n"
+            "   TensorFlow crashes on this specific combination. To prevent a backend crash,\n"
+            "   the system will run in DEMO MODE.\n"
+            "   💡 FIX: Please install Python 3.11 or 3.12 for full model support."
+        )
+        return None
+
     model_path = os.path.abspath(MODEL_PATH)
     if not os.path.exists(model_path):
         logger.warning(
-            f"Model file not found at {model_path}. "
+            f"❌ Model file not found at {model_path}. "
             "Running in DEMO MODE with simulated predictions."
         )
         return None
 
     try:
         import tensorflow as tf
-        logger.info(f"Loading model from {model_path} …")
-        _model = tf.keras.models.load_model(model_path)
-        logger.info("Model loaded successfully.")
+        logger.info(f"🔄 Loading model from {model_path} (on-the-fly) …")
+        
+        # Use compile=False to avoid initializer crashes on some macOS environments
+        _model = tf.keras.models.load_model(model_path, compile=False)
+        
+        logger.info("✅ Model loaded successfully.")
         return _model
     except Exception as e:
-        logger.error(f"Failed to load model: {e}")
+        logger.error(f"❌ Failed to load model: {e}")
         return None
 
 

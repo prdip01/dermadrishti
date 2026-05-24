@@ -10,73 +10,59 @@
 ### Steps
 
 ```bash
-# 1. Clone / download the project
-cd "Skin cancer"
-
-# 2. Install backend dependencies
+# 1. Install dependencies
 cd backend
 pip install -r requirements.txt
 
-# 3. Start the Flask server
+# 2. Start the unified server
 python app.py
-# → Runs at http://localhost:5000
-
-# 4. Open the frontend (in a new terminal or directly in browser)
-cd ../frontend
-python -m http.server 8080
-# → Open http://localhost:8080
+# → Both Frontend and Backend now run at http://localhost:5001
 ```
 
 ---
 
-## Option 2: Deploy Backend on Render (Free Tier)
+## Option 2: Unified Deployment on Render (RECOMMENDED)
 
-### 1. Prepare your project
+This is the simplest way to deploy. We serve both the Frontend and Backend from a single Render Web Service.
 
-Create a `Procfile` in the `backend/` directory:
-```
-web: python app.py
-```
-
-Update `app.py` to use `PORT` environment variable (already done):
-```python
-port = int(os.environ.get("PORT", 5000))
-app.run(host="0.0.0.0", port=port)
-```
-
-### 2. Push to GitHub
+### 1. Push to GitHub
+Ensure all your changes are committed and pushed to your GitHub repository.
 
 ```bash
-git init
 git add .
-git commit -m "Initial commit — DermAI"
-git remote add origin https://github.com/YOUR_USERNAME/dermai.git
-git push -u origin main
+git commit -m "Prepare for unified Render deployment"
+git push origin main
 ```
 
-### 3. Deploy on Render
+### 2. Deploy on Render
+1.  Go to [render.com](https://render.com) and log in.
+2.  Click **New +** → **Web Service**.
+3.  Connect your GitHub repository.
+4.  Configure the service:
+    *   **Name:** `dermai-skin-cancer` (or any name you like)
+    *   **Region:** Choose the one closest to you.
+    *   **Branch:** `main`
+    *   **Root Directory:** (Leave this empty)
+    *   **Runtime:** `Python 3`
+    *   **Build Command:** `pip install -r backend/requirements.txt`
+    *   **Start Command:** `gunicorn --chdir backend app:app`
+5.  **Environment Variables:**
+    *   Click **Advanced** → **Add Environment Variable**.
+    *   Key: `PYTHON_VERSION`, Value: `3.10.0` (or your preferred version)
+    *   Key: `FLASK_DEBUG`, Value: `false`
+6.  Click **Create Web Service**.
 
-1. Go to [render.com](https://render.com) → New → Web Service
-2. Connect your GitHub repo
-3. Set **Root Directory** to `backend`
-4. **Build Command:** `pip install -r requirements.txt`
-5. **Start Command:** `python app.py`
-6. Add environment variable: `FLASK_DEBUG=false`
-7. Deploy → copy the Render URL (e.g., `https://dermai.onrender.com`)
+### 3. Update Frontend API (Automatic)
+Because the frontend is now served by the backend on the same domain, it will automatically use the correct API URL if you use relative paths in `app.js`.
 
-### 4. Update the frontend API URL
-
-In `frontend/app.js`, change:
-```js
-const API_BASE = "https://dermai.onrender.com";  // ← your Render URL
+**Check `frontend/app.js`:**
+Ensure your `API_BASE` is set to an empty string or the current origin:
+```javascript
+const API_BASE = ""; // Empty string for same-domain requests
 ```
 
-### 5. Deploy frontend on GitHub Pages
-
-Host `frontend/` folder on GitHub Pages (static site).
-
-### ⚠️ Render Note
-Free tier spins down after 15 minutes of inactivity. First request may be slow (~30s).
+### ⚠️ Free Tier Note
+Render's free tier spins down after 15 minutes of inactivity. The first request after a spin-down may take ~30 seconds to wake up the server.
 
 ---
 
